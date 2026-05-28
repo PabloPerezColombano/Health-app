@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#2563eb" />
+<link rel="manifest" href="manifest.json" />
+<title>Health App</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #2563eb; --primary-light: #eff6ff;
+    --danger: #dc2626; --success: #16a34a; --warning: #d97706;
+    --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+    --gray-400: #9ca3af; --gray-600: #4b5563; --gray-800: #1f2937;
+    --radius: 10px; --shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  body { font-family: system-ui, sans-serif; background: var(--gray-50); color: var(--gray-800); min-height: 100vh; font-size: 16px; }
+  nav { background: white; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 16px; gap: 4px; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+  nav h1 { font-size: 1rem; font-weight: 700; color: var(--primary); white-space: nowrap; padding: 12px 8px 12px 0; margin-right: 8px; border-right: 1px solid var(--gray-200); }
+  nav button { background: none; border: none; padding: 14px 12px; cursor: pointer; font-size: 0.82rem; color: var(--gray-600); white-space: nowrap; border-bottom: 2px solid transparent; transition: all .2s; }
+  nav button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+  nav button:hover { color: var(--primary); }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px; border: 1px solid var(--gray-200); }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card-title { font-weight: 600; font-size: 0.95rem; }
+  .card-sub { font-size: 0.8rem; color: var(--gray-600); margin-top: 2px; }
+  .card-body { margin-top: 10px; font-size: 0.85rem; color: var(--gray-600); }
+  .card-body p { margin-bottom: 4px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-gray { background: var(--gray-100); color: var(--gray-600); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all .15s; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline { background: white; color: var(--gray-600); border: 1px solid var(--gray-200); }
+  .btn-outline:hover { background: var(--gray-50); }
+  .btn-danger { background: white; color: var(--danger); border: 1px solid #fecaca; }
+  .btn-danger:hover { background: #fef2f2; }
+  .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+  .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
+  .toolbar h2 { font-size: 1.1rem; font-weight: 700; }
+  .persona-select-wrap { background: white; border-radius: var(--radius); border: 1px solid var(--gray-200); padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .persona-select-wrap label { font-size: 0.85rem; font-weight: 600; color: var(--gray-600); }
+  .persona-select-wrap select { border: 1px solid var(--gray-200); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; color: var(--gray-800); background: var(--gray-50); cursor: pointer; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--gray-600); }
+  .form-group input, .form-group select, .form-group textarea { border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 10px; font-size: 0.85rem; color: var(--gray-800); background: white; transition: border .15s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px #dbeafe; }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: white; border-radius: 14px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-size: 1rem; font-weight: 700; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 12px 20px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .btn-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--gray-400); line-height: 1; }
+  .search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+  .search-bar input { flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; }
+  .search-bar input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px #dbeafe; }
+  .result-tipo { font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: .05em; color: var(--gray-400); margin-bottom: 2px; }
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--gray-200); }
+  .tl-item { position: relative; margin-bottom: 20px; }
+  .tl-dot { position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 2px var(--primary); background: var(--primary); }
+  .tl-dot.green { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+  .tl-dot.orange { background: var(--warning); box-shadow: 0 0 0 2px var(--warning); }
+  .tl-date { font-size: 0.75rem; color: var(--gray-400); margin-bottom: 4px; }
+  .empty { text-align: center; padding: 40px 20px; color: var(--gray-400); }
+  .empty span { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+  .loader { text-align: center; padding: 30px; color: var(--gray-400); font-size: 0.9rem; }
+  @media (min-width: 641px) {
+    nav h1 { font-size: 1.15rem; }
+    nav button { font-size: 0.92rem; padding: 16px 14px; }
+    .card-title { font-size: 1.05rem; }
+    .card-sub { font-size: 0.88rem; }
+    .card-body { font-size: 0.92rem; }
+    .btn { font-size: 0.92rem; padding: 9px 16px; }
+    .btn-sm { font-size: 0.84rem; padding: 6px 12px; }
+    .toolbar h2 { font-size: 1.25rem; }
+    .form-group input, .form-group select, .form-group textarea { font-size: 0.95rem; padding: 10px 12px; }
+    .form-group label { font-size: 0.88rem; }
+  }
+  @media (max-width: 640px) {
+    nav { padding: 0 8px; gap: 0; }
+    nav h1 { font-size: 0.95rem; padding: 10px 6px 10px 0; margin-right: 6px; }
+    nav button { padding: 12px 8px; font-size: 0.75rem; }
+    main { padding: 12px 10px; }
+    .toolbar h2 { font-size: 1rem; }
+    .btn { padding: 9px 12px; font-size: 0.85rem; }
+    .btn-sm { padding: 7px 10px; font-size: 0.8rem; }
+    .card { padding: 14px 12px; }
+    .card-title { font-size: 1rem; }
+    .card-sub { font-size: 0.82rem; }
+    .card-body { font-size: 0.88rem; }
+    .btn-group { gap: 8px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .form-group input, .form-group select, .form-group textarea { font-size: 1rem; padding: 10px 12px; }
+    .form-group label { font-size: 0.85rem; }
+    .modal-backdrop { padding: 0; align-items: flex-end; }
+    .modal { border-radius: 18px 18px 0 0; max-height: 92vh; width: 100%; }
+    .modal-header { padding: 14px 16px; }
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 12px 16px; }
+    .persona-select-wrap { padding: 10px 12px; }
+    .persona-select-wrap select { font-size: 0.95rem; padding: 8px 10px; }
+    .search-bar input { font-size: 1rem; padding: 10px 12px; }
+    .tl-date { font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <h1>🏥 Health</h1>
+  <button class="active" onclick="showSection('personas',this)">👤 Personas</button>
+  <button onclick="showSection('consultas',this)">🩺 Consultas</button>
+  <button onclick="showSection('estudios',this)">🔬 Estudios</button>
+  <button onclick="showSection('medicamentos',this)">💊 Medicamentos</button>
+  <button onclick="showSection('timeline',this)">📅 Timeline</button>
+  <button onclick="showSection('buscar',this)">🔍 Buscar</button>
+</nav>
+
+<main>
+  <section id="sec-personas" class="section active">
+    <div class="toolbar"><h2>Personas</h2><button class="btn btn-primary" onclick="openModal('persona')">+ Agregar</button></div>
+    <div id="lista-personas"><div class="loader">Cargando...</div></div>
+  </section>
+
+  <section id="sec-consultas" class="section">
+    <div class="persona-select-wrap">
+      <label>👤 Persona:</label>
+      <select id="sel-consultas" onchange="renderConsultas()"><option value="">Todas</option></select>
+    </div>
+    <div class="toolbar"><h2>Consultas</h2><button class="btn btn-primary" onclick="openModal('consulta')">+ Agregar</button></div>
+    <div id="lista-consultas"></div>
+  </section>
+
+  <section id="sec-estudios" class="section">
+    <div class="persona-select-wrap">
+      <label>👤 Persona:</label>
+      <select id="sel-estudios" onchange="renderEstudios()"><option value="">Todas</option></select>
+    </div>
+    <div class="toolbar"><h2>Estudios y Análisis</h2><button class="btn btn-primary" onclick="openModal('estudio')">+ Agregar</button></div>
+    <div id="lista-estudios"></div>
+  </section>
+
+  <section id="sec-medicamentos" class="section">
+    <div class="persona-select-wrap">
+      <label>👤 Persona:</label>
+      <select id="sel-medicamentos" onchange="renderMedicamentos()"><option value="">Todas</option></select>
+    </div>
+    <div class="toolbar"><h2>Medicamentos</h2><button class="btn btn-primary" onclick="openModal('medicamento')">+ Agregar</button></div>
+    <div id="lista-medicamentos"></div>
+  </section>
+
+  <section id="sec-timeline" class="section">
+    <div class="toolbar"><h2>Timeline</h2></div>
+    <div id="lista-timeline"></div>
+  </section>
+
+  <section id="sec-buscar" class="section">
+    <div class="toolbar"><h2>Buscar</h2></div>
+    <div class="search-bar">
+      <input type="text" id="input-buscar" placeholder="Buscar médico, medicamento, diagnóstico..." onkeydown="if(event.key==='Enter') buscar()" />
+      <button class="btn btn-primary" onclick="buscar()">Buscar</button>
+    </div>
+    <div id="lista-buscar"></div>
+  </section>
+</main>
+
+<input type="file" id="file-input-gallery" accept="image/*" style="display:none" onchange="handleFileInput(this)" />
+<input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none" onchange="handleFileInput(this)" />
+
+<!-- MODAL DETALLE -->
+<div id="modal-detalle" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header"><h3 id="detalle-title">Detalle</h3><button class="btn-close" onclick="closeModal('detalle')">✕</button></div>
+    <div class="modal-body" id="detalle-body"></div>
+    <div class="modal-footer" id="detalle-footer"></div>
+  </div>
+</div>
+
+<!-- MODAL PERSONA -->
+<div id="modal-persona" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modal-persona-title">Nueva Persona</h3><button class="btn-close" onclick="closeModal('persona')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <input type="hidden" id="p-id" />
+        <div class="form-group full"><label>Nombre *</label><input id="p-nombre" placeholder="Nombre completo" /></div>
+        <div class="form-group"><label>Fecha de Nacimiento</label><input id="p-fecha" type="date" /></div>
+        <div class="form-group"><label>Grupo Sanguíneo</label>
+          <select id="p-grupo"><option value="">—</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+        </div>
+        <div class="form-group full"><label>Alergias</label><input id="p-alergias" placeholder="Ej: Penicilina, Polen..." /></div>
+        <div class="form-group full"><label>Notas</label><textarea id="p-notas"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('persona')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePersona()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONSULTA -->
+<div id="modal-consulta" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modal-consulta-title">Nueva Consulta</h3><button class="btn-close" onclick="closeModal('consulta')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <input type="hidden" id="c-id" />
+        <div class="form-group full"><label>Persona *</label><select id="c-persona"></select></div>
+        <div class="form-group"><label>Fecha *</label><input id="c-fecha" type="date" /></div>
+        <div class="form-group"><label>Médico</label><input id="c-medico" placeholder="Dr. Apellido" /></div>
+        <div class="form-group"><label>Especialidad</label><input id="c-especialidad" placeholder="Ej: Clínica, Cardiología..." /></div>
+        <div class="form-group full"><label>Motivo</label><input id="c-motivo" placeholder="Motivo de la consulta" /></div>
+        <div class="form-group full"><label>Diagnóstico</label><textarea id="c-diagnostico"></textarea></div>
+        <div class="form-group full"><label>Notas</label><textarea id="c-notas"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('consulta')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveConsulta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ESTUDIO -->
+<div id="modal-estudio" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modal-estudio-title">Nuevo Estudio / Análisis</h3><button class="btn-close" onclick="closeModal('estudio')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <input type="hidden" id="e-id" />
+        <div class="form-group full"><label>Persona *</label><select id="e-persona"></select></div>
+        <div class="form-group"><label>Fecha *</label><input id="e-fecha" type="date" /></div>
+        <div class="form-group"><label>Tipo</label>
+          <select id="e-tipo">
+            <option value="">—</option><option>Análisis de sangre</option><option>Análisis de orina</option>
+            <option>Radiografía</option><option>Ecografía</option><option>Tomografía</option>
+            <option>Resonancia</option><option>Electrocardiograma</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>Descripción</label><input id="e-descripcion" placeholder="Descripción del estudio" /></div>
+        <div class="form-group full"><label>Laboratorio / Centro</label><input id="e-laboratorio" placeholder="Nombre del laboratorio" /></div>
+        <div class="form-group full">
+          <label>Imagen / Archivo</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('file-input-gallery').click()">🖼️ Galería</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('file-input-camera').click()">📷 Cámara</button>
+          </div>
+          <input id="e-url" placeholder="O pegá un link de Google Drive..." style="width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:8px 10px;font-size:0.85rem" />
+          <div id="e-preview" style="margin-top:8px;display:none">
+            <img id="e-preview-img" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid var(--gray-200)" />
+            <button type="button" class="btn btn-danger btn-sm" style="margin-top:4px" onclick="clearImagen()">✕ Quitar</button>
+          </div>
+        </div>
+        <div class="form-group full"><label>Notas</label><textarea id="e-notas"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('estudio')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-estudio" onclick="saveEstudio()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MEDICAMENTO -->
+<div id="modal-medicamento" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modal-medicamento-title">Nuevo Medicamento</h3><button class="btn-close" onclick="closeModal('medicamento')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <input type="hidden" id="m-id" />
+        <div class="form-group full"><label>Persona *</label><select id="m-persona"></select></div>
+        <div class="form-group full"><label>Nombre *</label><input id="m-nombre" placeholder="Ej: Ibuprofeno" /></div>
+        <div class="form-group"><label>Dosis</label><input id="m-dosis" placeholder="Ej: 400mg" /></div>
+        <div class="form-group"><label>Frecuencia</label><input id="m-frecuencia" placeholder="Ej: Cada 8hs" /></div>
+        <div class="form-group"><label>Médico</label><input id="m-medico" placeholder="Dr. Apellido" /></div>
+        <div class="form-group"><label>Estado</label><select id="m-estado"><option>Activo</option><option>Finalizado</option></select></div>
+        <div class="form-group"><label>Fecha Inicio</label><input id="m-inicio" type="date" /></div>
+        <div class="form-group"><label>Fecha Fin</label><input id="m-fin" type="date" /></div>
+        <div class="form-group full"><label>Notas</label><textarea id="m-notas"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('medicamento')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMedicamento()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+var API = "https://script.google.com/macros/s/AKfycbyXxMywEbP7OeHT5rVg0Mjiyh5yrJxiIeQWcfsoTxG8Yinv9mVorw3LjXVbuYx5Y7gk/exec";
+
+// ============================================================
+//  ESTADO
+// ============================================================
+var personas     = [];
+var consultas    = [];
+var estudios     = [];
+var medicamentos = [];
+var cacheLoaded  = false;
+var pendingImageBase64 = null;
+var pendingImageMime   = null;
+var pendingImageName   = null;
+
+// ============================================================
+//  API
+// ============================================================
+function api(params) {
+  var url = API + '?' + Object.keys(params).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+  return fetch(url).then(function(r) { return r.json(); });
+}
+
+function apiPost(data) {
+  return fetch(API, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); });
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+window.onload = function() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  loadAll();
+};
+
+function loadAll() {
+  cacheLoaded = false;
+  var done = 0;
+  function check() {
+    done++;
+    if (done === 4) {
+      cacheLoaded = true;
+      fillAllPersonaSelects();
+      renderPersonas();
+    }
+  }
+  api({action:'getPersonas'}).then(function(d)     { personas     = d; check(); }).catch(onError);
+  api({action:'getConsultas'}).then(function(d)    { consultas    = d; check(); }).catch(onError);
+  api({action:'getEstudios'}).then(function(d)     { estudios     = d; check(); }).catch(onError);
+  api({action:'getMedicamentos'}).then(function(d) { medicamentos = d; check(); }).catch(onError);
+}
+
+function onError(err) { console.error(err); alert('Error al conectar con el servidor.'); }
+
+// ============================================================
+//  NAVEGACIÓN
+// ============================================================
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (!cacheLoaded) return;
+  if (name === 'personas')     renderPersonas();
+  if (name === 'consultas')    renderConsultas();
+  if (name === 'estudios')     renderEstudios();
+  if (name === 'medicamentos') renderMedicamentos();
+  if (name === 'timeline')     renderTimelinePersonas();
+}
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function personaNombre(id) {
+  var p = personas.find(function(p) { return String(p.ID) === String(id); });
+  return p ? p.Nombre : '—';
+}
+function fmtFecha(f) { return f || '—'; }
+function empty(msg) { return '<div class="empty"><span>📭</span>' + msg + '</div>'; }
+
+function fillAllPersonaSelects() {
+  ['sel-consultas','sel-estudios','sel-medicamentos'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">Todas</option>' +
+      personas.map(function(p) {
+        return '<option value="' + p.ID + '"' + (String(p.ID) === cur ? ' selected' : '') + '>' + p.Nombre + '</option>';
+      }).join('');
+  });
+}
+
+function fillPersonaSelect(selectId, selectedId) {
+  var sel = document.getElementById(selectId);
+  sel.innerHTML = personas.map(function(p) {
+    return '<option value="' + p.ID + '"' + (String(p.ID) === String(selectedId) ? ' selected' : '') + '>' + p.Nombre + '</option>';
+  }).join('');
+}
+
+// ============================================================
+//  MODAL
+// ============================================================
+function openModal(tipo, data) {
+  var isEdit = !!data;
+  if (tipo === 'persona') {
+    document.getElementById('modal-persona-title').textContent = isEdit ? 'Editar Persona' : 'Nueva Persona';
+    document.getElementById('p-id').value       = data ? data.ID : '';
+    document.getElementById('p-nombre').value   = data ? data.Nombre : '';
+    document.getElementById('p-fecha').value    = data ? data['Fecha Nacimiento'] : '';
+    document.getElementById('p-grupo').value    = data ? data['Grupo Sanguineo'] : '';
+    document.getElementById('p-alergias').value = data ? data.Alergias : '';
+    document.getElementById('p-notas').value    = data ? data.Notas : '';
+  }
+  if (tipo === 'consulta') {
+    fillPersonaSelect('c-persona', data ? data['Persona ID'] : '');
+    document.getElementById('modal-consulta-title').textContent = isEdit ? 'Editar Consulta' : 'Nueva Consulta';
+    document.getElementById('c-id').value           = data ? data.ID : '';
+    document.getElementById('c-fecha').value        = data ? data.Fecha : '';
+    document.getElementById('c-medico').value       = data ? data.Medico : '';
+    document.getElementById('c-especialidad').value = data ? data.Especialidad : '';
+    document.getElementById('c-motivo').value       = data ? data.Motivo : '';
+    document.getElementById('c-diagnostico').value  = data ? data.Diagnostico : '';
+    document.getElementById('c-notas').value        = data ? data.Notas : '';
+  }
+  if (tipo === 'estudio') {
+    fillPersonaSelect('e-persona', data ? data['Persona ID'] : '');
+    document.getElementById('modal-estudio-title').textContent = isEdit ? 'Editar Estudio' : 'Nuevo Estudio / Análisis';
+    document.getElementById('e-id').value          = data ? data.ID : '';
+    document.getElementById('e-fecha').value       = data ? data.Fecha : '';
+    document.getElementById('e-tipo').value        = data ? data.Tipo : '';
+    document.getElementById('e-descripcion').value = data ? data.Descripcion : '';
+    document.getElementById('e-laboratorio').value = data ? data.Laboratorio : '';
+    document.getElementById('e-url').value         = data ? data['Archivo URL'] : '';
+    document.getElementById('e-notas').value       = data ? data.Notas : '';
+    clearImagen();
+  }
+  if (tipo === 'medicamento') {
+    fillPersonaSelect('m-persona', data ? data['Persona ID'] : '');
+    document.getElementById('modal-medicamento-title').textContent = isEdit ? 'Editar Medicamento' : 'Nuevo Medicamento';
+    document.getElementById('m-id').value         = data ? data.ID : '';
+    document.getElementById('m-nombre').value     = data ? data.Nombre : '';
+    document.getElementById('m-dosis').value      = data ? data.Dosis : '';
+    document.getElementById('m-frecuencia').value = data ? data.Frecuencia : '';
+    document.getElementById('m-medico').value     = data ? data.Medico : '';
+    document.getElementById('m-estado').value     = data ? data.Estado : 'Activo';
+    document.getElementById('m-inicio').value     = data ? data['Fecha Inicio'] : '';
+    document.getElementById('m-fin').value        = data ? data['Fecha Fin'] : '';
+    document.getElementById('m-notas').value      = data ? data.Notas : '';
+  }
+  document.getElementById('modal-' + tipo).classList.add('open');
+}
+
+function closeModal(tipo) {
+  document.getElementById('modal-' + tipo).classList.remove('open');
+}
+
+// ============================================================
+//  MODAL DETALLE
+// ============================================================
+function verDetalle(tipo, data) {
+  var title  = document.getElementById('detalle-title');
+  var body   = document.getElementById('detalle-body');
+  var footer = document.getElementById('detalle-footer');
+  var rows   = [];
+
+  if (tipo === 'consulta') {
+    title.textContent = '🩺 Consulta';
+    rows = [['Persona', personaNombre(data['Persona ID'])], ['Fecha', fmtFecha(data.Fecha)],
+            ['Médico', data.Medico], ['Especialidad', data.Especialidad],
+            ['Motivo', data.Motivo], ['Diagnóstico', data.Diagnostico], ['Notas', data.Notas]];
+  } else if (tipo === 'estudio') {
+    title.textContent = '🔬 Estudio / Análisis';
+    rows = [['Persona', personaNombre(data['Persona ID'])], ['Fecha', fmtFecha(data.Fecha)],
+            ['Tipo', data.Tipo], ['Descripción', data.Descripcion],
+            ['Laboratorio', data.Laboratorio], ['Notas', data.Notas]];
+  } else if (tipo === 'medicamento') {
+    title.textContent = '💊 Medicamento';
+    rows = [['Persona', personaNombre(data['Persona ID'])], ['Nombre', data.Nombre],
+            ['Dosis', data.Dosis], ['Frecuencia', data.Frecuencia], ['Médico', data.Medico],
+            ['Estado', data.Estado], ['Desde', fmtFecha(data['Fecha Inicio'])],
+            ['Hasta', fmtFecha(data['Fecha Fin'])], ['Notas', data.Notas]];
+  } else if (tipo === 'persona') {
+    title.textContent = '👤 Persona';
+    rows = [['Nombre', data.Nombre], ['Nacimiento', fmtFecha(data['Fecha Nacimiento'])],
+            ['Grupo sanguíneo', data['Grupo Sanguineo']], ['Alergias', data.Alergias], ['Notas', data.Notas]];
+  }
+
+  body.innerHTML = rows.filter(function(r) { return r[1]; }).map(function(r) {
+    return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100)">' +
+      '<span style="font-size:0.78rem;font-weight:600;color:var(--gray-400);min-width:110px">' + r[0] + '</span>' +
+      '<span style="font-size:0.88rem;color:var(--gray-800)">' + r[1] + '</span></div>';
+  }).join('');
+
+  var archivoUrl = data['Archivo URL'];
+  var dataStr = JSON.stringify(data).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  footer.innerHTML =
+    (archivoUrl ? '<a href="' + archivoUrl + '" target="_blank" class="btn btn-primary">📎 Ver archivo</a>' : '') +
+    '<button class="btn btn-outline" onclick=\'openModal("' + tipo + '",' + dataStr + ');closeModal("detalle")\'>✏️ Editar</button>' +
+    '<button class="btn btn-outline" onclick="closeModal(\'detalle\')">Cerrar</button>';
+
+  document.getElementById('modal-detalle').classList.add('open');
+}
+
+// ============================================================
+//  IMAGEN
+// ============================================================
+function handleFileInput(input) {
+  var file = input.files[0];
+  if (!file) return;
+  pendingImageMime = file.type;
+  pendingImageName = file.name;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    pendingImageBase64 = dataUrl.split(',')[1];
+    document.getElementById('e-url').value = '';
+    document.getElementById('e-preview-img').src = dataUrl;
+    document.getElementById('e-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function clearImagen() {
+  pendingImageBase64 = pendingImageMime = pendingImageName = null;
+  document.getElementById('e-preview').style.display = 'none';
+  document.getElementById('e-preview-img').src = '';
+}
+
+// ============================================================
+//  PERSONAS
+// ============================================================
+function renderPersonas() {
+  var el = document.getElementById('lista-personas');
+  if (!personas.length) { el.innerHTML = empty('No hay personas registradas'); return; }
+  el.innerHTML = personas.map(function(p) {
+    var dataStr = JSON.stringify(p).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<div class="card" style="cursor:pointer" onclick=\'verDetalle("persona",' + dataStr + ')\'>' +
+      '<div class="card-header"><div>' +
+      '<div class="card-title">👤 ' + p.Nombre + '</div>' +
+      '<div class="card-sub">' + (p['Fecha Nacimiento'] ? 'Nac: ' + p['Fecha Nacimiento'] : '') + (p['Grupo Sanguineo'] ? ' · ' + p['Grupo Sanguineo'] : '') + '</div>' +
+      '</div><div class="btn-group" onclick="event.stopPropagation()">' +
+      '<button class="btn btn-outline btn-sm" onclick=\'openModal("persona",' + dataStr + ')\'>✏️</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="deletePersona(' + p.ID + ')">🗑️</button>' +
+      '</div></div>' +
+      (p.Alergias ? '<div class="card-body"><p>⚠️ ' + p.Alergias + '</p></div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function savePersona() {
+  var id     = document.getElementById('p-id').value;
+  var nombre = document.getElementById('p-nombre').value.trim();
+  if (!nombre) { alert('El nombre es obligatorio'); return; }
+  var params = { nombre: nombre, fechaNac: document.getElementById('p-fecha').value,
+    grupoSanguineo: document.getElementById('p-grupo').value,
+    alergias: document.getElementById('p-alergias').value, notas: document.getElementById('p-notas').value };
+  params.action = id ? 'updatePersona' : 'addPersona';
+  if (id) params.id = id;
+  apiPost(params).then(function() {
+    closeModal('persona');
+    api({action:'getPersonas'}).then(function(d) { personas = d; fillAllPersonaSelects(); renderPersonas(); });
+  });
+}
+
+function deletePersona(id) {
+  if (!confirm('¿Eliminar esta persona?')) return;
+  apiPost({action:'deletePersona', id:id}).then(function() {
+    api({action:'getPersonas'}).then(function(d) { personas = d; fillAllPersonaSelects(); renderPersonas(); });
+  });
+}
+
+// ============================================================
+//  CONSULTAS
+// ============================================================
+function renderConsultas() {
+  var pid  = document.getElementById('sel-consultas').value;
+  var el   = document.getElementById('lista-consultas');
+  var data = pid ? consultas.filter(function(c) { return String(c['Persona ID']) === pid; }) : consultas.slice();
+  if (!data.length) { el.innerHTML = empty('No hay consultas registradas'); return; }
+  data.sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
+  el.innerHTML = data.map(function(c) {
+    var dataStr = JSON.stringify(c).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<div class="card" style="cursor:pointer" onclick=\'verDetalle("consulta",' + dataStr + ')\'>' +
+      '<div class="card-header"><div>' +
+      '<div class="card-title">🩺 ' + (c.Medico || 'Sin médico') + ' <span class="badge badge-blue">' + (c.Especialidad || '') + '</span></div>' +
+      '<div class="card-sub">' + fmtFecha(c.Fecha) + ' · ' + personaNombre(c['Persona ID']) + '</div>' +
+      '</div><div class="btn-group" onclick="event.stopPropagation()">' +
+      '<button class="btn btn-outline btn-sm" onclick=\'openModal("consulta",' + dataStr + ')\'>✏️</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteConsulta(' + c.ID + ')">🗑️</button>' +
+      '</div></div>' +
+      (c.Motivo ? '<div class="card-body"><p>📋 ' + c.Motivo + '</p></div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function saveConsulta() {
+  var id    = document.getElementById('c-id').value;
+  var fecha = document.getElementById('c-fecha').value;
+  if (!fecha) { alert('La fecha es obligatoria'); return; }
+  var params = { action: id ? 'updateConsulta' : 'addConsulta',
+    personaId: document.getElementById('c-persona').value, fecha: fecha,
+    medico: document.getElementById('c-medico').value, especialidad: document.getElementById('c-especialidad').value,
+    motivo: document.getElementById('c-motivo').value, diagnostico: document.getElementById('c-diagnostico').value,
+    notas: document.getElementById('c-notas').value };
+  if (id) params.id = id;
+  apiPost(params).then(function() {
+    closeModal('consulta');
+    api({action:'getConsultas'}).then(function(d) { consultas = d; renderConsultas(); });
+  });
+}
+
+function deleteConsulta(id) {
+  if (!confirm('¿Eliminar esta consulta?')) return;
+  apiPost({action:'deleteConsulta', id:id}).then(function() {
+    api({action:'getConsultas'}).then(function(d) { consultas = d; renderConsultas(); });
+  });
+}
+
+// ============================================================
+//  ESTUDIOS
+// ============================================================
+function renderEstudios() {
+  var pid  = document.getElementById('sel-estudios').value;
+  var el   = document.getElementById('lista-estudios');
+  var data = pid ? estudios.filter(function(e) { return String(e['Persona ID']) === pid; }) : estudios.slice();
+  if (!data.length) { el.innerHTML = empty('No hay estudios registrados'); return; }
+  data.sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
+  el.innerHTML = data.map(function(e) {
+    var dataStr = JSON.stringify(e).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<div class="card" style="cursor:pointer" onclick=\'verDetalle("estudio",' + dataStr + ')\'>' +
+      '<div class="card-header"><div>' +
+      '<div class="card-title">🔬 ' + (e.Descripcion || e.Tipo || 'Estudio') + ' <span class="badge badge-orange">' + (e.Tipo || '') + '</span></div>' +
+      '<div class="card-sub">' + fmtFecha(e.Fecha) + ' · ' + personaNombre(e['Persona ID']) + (e.Laboratorio ? ' · ' + e.Laboratorio : '') + '</div>' +
+      '</div><div class="btn-group" onclick="event.stopPropagation()">' +
+      '<button class="btn btn-outline btn-sm" onclick=\'openModal("estudio",' + dataStr + ')\'>✏️</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteEstudio(' + e.ID + ')">🗑️</button>' +
+      '</div></div>' +
+      (e['Archivo URL'] ? '<div class="card-body"><p>📎 Tiene archivo adjunto</p></div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function saveEstudio() {
+  var id    = document.getElementById('e-id').value;
+  var fecha = document.getElementById('e-fecha').value;
+  if (!fecha) { alert('La fecha es obligatoria'); return; }
+
+  function doSave(archivoUrl) {
+    var params = { action: id ? 'updateEstudio' : 'addEstudio',
+      personaId: document.getElementById('e-persona').value, fecha: fecha,
+      tipo: document.getElementById('e-tipo').value, descripcion: document.getElementById('e-descripcion').value,
+      laboratorio: document.getElementById('e-laboratorio').value, archivoUrl: archivoUrl,
+      notas: document.getElementById('e-notas').value };
+    if (id) params.id = id;
+    var btn = document.getElementById('btn-save-estudio');
+    btn.textContent = 'Guardando...'; btn.disabled = true;
+    apiPost(params).then(function() {
+      closeModal('estudio'); clearImagen(); btn.textContent = 'Guardar'; btn.disabled = false;
+      api({action:'getEstudios'}).then(function(d) { estudios = d; renderEstudios(); });
+    });
+  }
+
+  if (pendingImageBase64) {
+    var btn = document.getElementById('btn-save-estudio');
+    btn.textContent = 'Subiendo...'; btn.disabled = true;
+    apiPost({action:'subirImagen', base64Data: pendingImageBase64, mimeType: pendingImageMime, fileName: pendingImageName})
+      .then(function(url) { doSave(url); });
+  } else {
+    doSave(document.getElementById('e-url').value);
+  }
+}
+
+function deleteEstudio(id) {
+  if (!confirm('¿Eliminar este estudio?')) return;
+  apiPost({action:'deleteEstudio', id:id}).then(function() {
+    api({action:'getEstudios'}).then(function(d) { estudios = d; renderEstudios(); });
+  });
+}
+
+// ============================================================
+//  MEDICAMENTOS
+// ============================================================
+function renderMedicamentos() {
+  var pid  = document.getElementById('sel-medicamentos').value;
+  var el   = document.getElementById('lista-medicamentos');
+  var data = pid ? medicamentos.filter(function(m) { return String(m['Persona ID']) === pid; }) : medicamentos.slice();
+  if (!data.length) { el.innerHTML = empty('No hay medicamentos registrados'); return; }
+  data.sort(function(a,b) { return b['Fecha Inicio'] > a['Fecha Inicio'] ? 1 : -1; });
+  el.innerHTML = data.map(function(m) {
+    var dataStr = JSON.stringify(m).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<div class="card" style="cursor:pointer" onclick=\'verDetalle("medicamento",' + dataStr + ')\'>' +
+      '<div class="card-header"><div>' +
+      '<div class="card-title">💊 ' + m.Nombre + ' <span class="badge ' + (m.Estado === 'Activo' ? 'badge-green' : 'badge-gray') + '">' + (m.Estado || '') + '</span></div>' +
+      '<div class="card-sub">' + personaNombre(m['Persona ID']) + (m.Dosis ? ' · ' + m.Dosis : '') + (m.Frecuencia ? ' · ' + m.Frecuencia : '') + '</div>' +
+      '</div><div class="btn-group" onclick="event.stopPropagation()">' +
+      '<button class="btn btn-outline btn-sm" onclick=\'openModal("medicamento",' + dataStr + ')\'>✏️</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteMedicamento(' + m.ID + ')">🗑️</button>' +
+      '</div></div>' +
+      (m['Fecha Inicio'] ? '<div class="card-body"><p>📅 ' + m['Fecha Inicio'] + (m['Fecha Fin'] ? ' → ' + m['Fecha Fin'] : '') + '</p></div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function saveMedicamento() {
+  var id     = document.getElementById('m-id').value;
+  var nombre = document.getElementById('m-nombre').value.trim();
+  if (!nombre) { alert('El nombre es obligatorio'); return; }
+  var params = { action: id ? 'updateMedicamento' : 'addMedicamento',
+    personaId: document.getElementById('m-persona').value, nombre: nombre,
+    dosis: document.getElementById('m-dosis').value, frecuencia: document.getElementById('m-frecuencia').value,
+    medico: document.getElementById('m-medico').value, fechaInicio: document.getElementById('m-inicio').value,
+    fechaFin: document.getElementById('m-fin').value, estado: document.getElementById('m-estado').value,
+    notas: document.getElementById('m-notas').value };
+  if (id) params.id = id;
+  apiPost(params).then(function() {
+    closeModal('medicamento');
+    api({action:'getMedicamentos'}).then(function(d) { medicamentos = d; renderMedicamentos(); });
+  });
+}
+
+function deleteMedicamento(id) {
+  if (!confirm('¿Eliminar este medicamento?')) return;
+  apiPost({action:'deleteMedicamento', id:id}).then(function() {
+    api({action:'getMedicamentos'}).then(function(d) { medicamentos = d; renderMedicamentos(); });
+  });
+}
+
+// ============================================================
+//  TIMELINE
+// ============================================================
+function renderTimelinePersonas() {
+  var el = document.getElementById('lista-timeline');
+  if (!personas.length) { el.innerHTML = empty('No hay personas registradas'); return; }
+  el.innerHTML = personas.map(function(p) {
+    var pid = String(p.ID);
+    var eventos = []
+      .concat(consultas.filter(function(c) { return String(c['Persona ID']) === pid; })
+        .map(function(c) { return Object.assign({}, c, {_tipo:'consulta', _fecha:c.Fecha}); }))
+      .concat(estudios.filter(function(e) { return String(e['Persona ID']) === pid; })
+        .map(function(e) { return Object.assign({}, e, {_tipo:'estudio', _fecha:e.Fecha}); }))
+      .concat(medicamentos.filter(function(m) { return String(m['Persona ID']) === pid; })
+        .map(function(m) { return Object.assign({}, m, {_tipo:'medicamento', _fecha:m['Fecha Inicio']}); }))
+      .filter(function(e) { return e._fecha; })
+      .sort(function(a,b) { return b._fecha > a._fecha ? 1 : -1; });
+    return '<div class="card" style="margin-bottom:12px">' +
+      '<div class="card-header" style="cursor:pointer" onclick="toggleTimeline(\'tl-' + pid + '\',\'arr-' + pid + '\')">' +
+      '<div><div class="card-title">👤 ' + p.Nombre + '</div>' +
+      '<div class="card-sub">' + eventos.length + ' evento' + (eventos.length !== 1 ? 's' : '') + '</div></div>' +
+      '<span id="arr-' + pid + '" style="font-size:1.2rem;color:var(--gray-400)">▶</span></div>' +
+      '<div id="tl-' + pid + '" style="display:none;margin-top:12px">' +
+      (eventos.length ? renderTLEventos(eventos) : '<div class="empty" style="padding:16px"><span style="font-size:1.5rem">📭</span>Sin eventos</div>') +
+      '</div></div>';
+  }).join('');
+}
+
+function toggleTimeline(tlId, arrId) {
+  var el  = document.getElementById(tlId);
+  var arr = document.getElementById(arrId);
+  var open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  arr.textContent  = open ? '▼' : '▶';
+}
+
+function renderTLEventos(eventos) {
+  return '<div class="timeline">' + eventos.map(function(ev) {
+    var dot = '', title = '', tipo = ev._tipo;
+    if (tipo === 'consulta')    { dot = '';       title = '🩺 ' + (ev.Medico || 'Consulta') + (ev.Especialidad ? ' · ' + ev.Especialidad : ''); }
+    else if (tipo === 'estudio')     { dot = 'orange'; title = '🔬 ' + (ev.Descripcion || ev.Tipo || 'Estudio'); }
+    else                             { dot = 'green';  title = '💊 ' + ev.Nombre; }
+    var dataStr = JSON.stringify(ev).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<div class="tl-item"><div class="tl-dot ' + dot + '"></div>' +
+      '<div class="tl-date">' + fmtFecha(ev._fecha) + '</div>' +
+      '<div class="card" style="margin-bottom:0;cursor:pointer" onclick=\'verDetalle("' + tipo + '",' + dataStr + ')\'>' +
+      '<div class="card-title">' + title + '</div>' +
+      (ev['Archivo URL'] ? '<div class="card-body"><p>📎 Tiene archivo adjunto</p></div>' : '') +
+      '</div></div>';
+  }).join('') + '</div>';
+}
+
+// ============================================================
+//  BÚSQUEDA
+// ============================================================
+function buscar() {
+  var q = document.getElementById('input-buscar').value.trim();
+  if (!q) return;
+  var el = document.getElementById('lista-buscar');
+  el.innerHTML = '<div class="loader">Buscando...</div>';
+  api({action:'buscar', query:q}).then(function(data) {
+    if (!data.length) { el.innerHTML = empty('Sin resultados'); return; }
+    var iconos = { Consulta:'🩺', Estudio:'🔬', Medicamento:'💊' };
+    el.innerHTML = data.map(function(r) {
+      var tipo = r.tipo.toLowerCase();
+      var dataStr = JSON.stringify(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      return '<div class="card" style="cursor:pointer" onclick=\'verDetalle("' + tipo + '",' + dataStr + ')\'>' +
+        '<div class="result-tipo">' + r.tipo + '</div>' +
+        '<div class="card-title">' + (iconos[r.tipo]||'') + ' ' + (r.Nombre||r.Medico||r.Descripcion||r.Tipo||'—') + '</div>' +
+        '<div class="card-sub">' + fmtFecha(r.Fecha||r['Fecha Inicio']) + ' · ' + personaNombre(r['Persona ID']) + '</div>' +
+        '</div>';
+    }).join('');
+  });
+}
+</script>
+</body>
+</html>
