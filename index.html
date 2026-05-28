@@ -324,17 +324,26 @@ var pendingImageName   = null;
 //  API
 // ============================================================
 function api(params) {
-  var url = API + '?' + Object.keys(params).map(function(k) {
-    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-  }).join('&');
-  return fetch(url).then(function(r) { return r.json(); });
+  return new Promise(function(resolve, reject) {
+    var cbName = 'cb_' + Math.random().toString(36).slice(2);
+    var script = document.createElement('script');
+    params.callback = cbName;
+    var url = API + '?' + Object.keys(params).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+    window[cbName] = function(data) {
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(data);
+    };
+    script.onerror = function() { reject(new Error('JSONP error')); };
+    script.src = url;
+    document.body.appendChild(script);
+  });
 }
 
 function apiPost(data) {
-  return fetch(API, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  }).then(function(r) { return r.json(); });
+  return api(data);
 }
 
 // ============================================================
