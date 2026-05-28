@@ -1,3 +1,3 @@
-self.addEventListener('fetch', function(event) {
-  event.respondWith(fetch(event.request));
-});
+// Service Worker mínimo — no intercepta requests
+self.addEventListener('install', function(e) { self.skipWaiting(); });
+self.addEventListener('activate', function(e) { e.waitUntil(self.clients.claim()); });
